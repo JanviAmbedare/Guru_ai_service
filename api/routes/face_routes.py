@@ -22,19 +22,6 @@ from utils.file_utils import (
     FileUtils
 )
 
-from services.inference.vector_service import (
-    VectorService
-)
-
-from services.inference.recognition_service import (
-    RecognitionService
-)
-
-from services.inference.face_embedding_service import (
-    FaceEmbeddingService
-)
-
-
 router = APIRouter()
 
 
@@ -43,12 +30,12 @@ router = APIRouter()
 # =====================================
 
 @router.post("/face/register")
-
 async def register_face(
 
     user_id: int = Form(...),
 
     file: UploadFile = File(...)
+
 ):
 
     db = SessionLocal()
@@ -74,11 +61,15 @@ async def register_face(
 
         contents = await file.read()
 
-        temp_file.write(contents)
+        temp_file.write(
+            contents
+        )
 
         temp_file.close()
 
-        temp_path = temp_file.name
+        temp_path = (
+            temp_file.name
+        )
 
         # ==========================
         # CLOUDINARY UPLOAD
@@ -119,7 +110,7 @@ async def register_face(
                 'faces',
                 'registration',
                 :file_name,
-                :local_path,
+                NULL,
                 :cloudinary_url,
                 :public_id,
                 :file_size,
@@ -136,7 +127,6 @@ async def register_face(
             {
                 "user_id": user_id,
                 "file_name": file.filename,
-                "local_path": temp_path,
                 "cloudinary_url": (
                     upload_result["url"]
                 ),
@@ -155,7 +145,7 @@ async def register_face(
         )
 
         # ==========================
-        # INSERT QUEUE JOB
+        # TRAINING QUEUE
         # ==========================
 
         queue_query = text(
@@ -192,15 +182,19 @@ async def register_face(
         return {
             "status": "success",
             "message": (
-                "Face uploaded "
-                "and queued"
+                "Face uploaded and queued"
             ),
             "media_file_id": (
                 media_file_id
+            ),
+            "cloudinary_url": (
+                upload_result["url"]
             )
         }
 
     except Exception as e:
+
+        db.rollback()
 
         return {
             "status": "failed",
@@ -216,97 +210,3 @@ async def register_face(
             FileUtils.delete_file(
                 temp_path
             )
-
-
-# # =====================================
-# # FACE RECOGNITION
-# # =====================================
-
-# @router.post("/face/recognize")
-
-# async def recognize_face(
-
-#     user_id: int = Form(...),
-
-#     file: UploadFile = File(...)
-# ):
-
-#     temp_path = None
-
-#     try:
-
-#         suffix = os.path.splitext(
-#             file.filename
-#         )[1]
-
-#         temp_file = (
-#             tempfile.NamedTemporaryFile(
-#                 delete=False,
-#                 suffix=suffix
-#             )
-#         )
-
-#         contents = await file.read()
-
-#         temp_file.write(contents)
-
-#         temp_file.close()
-
-#         temp_path = temp_file.name
-
-#         new_embedding = (
-#             FaceEmbeddingService
-#             .generate_embedding(
-#                 user_id,
-#                 temp_path
-#             )
-#         )
-
-#         stored_embedding = (
-#             VectorService
-#             .load_face_embedding(
-#                 user_id
-#             )
-#         )
-
-#         if stored_embedding is None:
-
-#             return {
-#                 "status": "failed",
-#                 "message": (
-#                     "No registered face"
-#                 )
-#             }
-
-#         result = (
-#             RecognitionService
-#             .is_face_match(
-#                 stored_embedding,
-#                 new_embedding
-#             )
-#         )
-
-#         return {
-#             "status": "success",
-#             "matched": (
-#                 result["matched"]
-#             ),
-#             "similarity": (
-#                 result["similarity"]
-#             )
-#         }
-
-#     except Exception as e:
-
-#         return {
-#             "status": "failed",
-#             "error": str(e)
-#         }
-
-#     finally:
-
-#         if temp_path:
-
-#             FileUtils.delete_file(
-#                 temp_path
-#             )

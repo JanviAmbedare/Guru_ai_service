@@ -1,40 +1,13 @@
-from fastapi import (
-    APIRouter
-)
-
-from pydantic import (
-    BaseModel
-)
+from fastapi import APIRouter
+from pydantic import BaseModel
 
 from sqlalchemy import text
 
-from utils.database import (
-    SessionLocal
-)
-
-from services.chat.intent_service import (
-    IntentService
-)
-
-from services.chat.sentiment_service import (
-    SentimentService
-)
-
-from services.chat.memory_service import (
-    MemoryService
-)
-
-from services.chat.response_service import (
-    ResponseService
-)
-
+from utils.database import SessionLocal
+from ai_service import GuruAIService
 
 router = APIRouter()
 
-
-# =====================================
-# REQUEST MODEL
-# =====================================
 
 class ChatRequest(BaseModel):
 
@@ -42,12 +15,7 @@ class ChatRequest(BaseModel):
     message: str
 
 
-# =====================================
-# CHAT API
-# =====================================
-
 @router.post("/chat")
-
 def process_chat(
     request: ChatRequest
 ):
@@ -56,103 +24,83 @@ def process_chat(
 
     try:
 
-        # ==========================
-        # INTENT
-        # ==========================
-
-        intent = (
-            IntentService
-            .detect_intent(
+        result = (
+            GuruAIService
+            .process_message(
+                request.user_id,
                 request.message
             )
         )
 
-        # ==========================
-        # SENTIMENT
-        # ==========================
-
-        sentiment = (
-            SentimentService
-            .detect_sentiment(
-                request.message
-            )
+        session_id = (
+            f"user_{request.user_id}"
         )
 
-        # ==========================
-        # MEMORY
-        # ==========================
-
-        memories = (
-            MemoryService
-            .get_memories(
-                request.user_id
-            )
-        )
-
-        # ==========================
-        # RESPONSE
-        # ==========================
-
-        response = (
-            ResponseService
-            .generate_response(
-                request.message,
-                intent,
-                sentiment,
-                memories
-            )
-        )
-
-        # ==========================
-        # SAVE MEMORY
-        # ==========================
-
-        MemoryService.save_memory(
-            request.user_id,
-            request.message
-        )
-
-        # ==========================
-        # SAVE CONVERSATION
-        # ==========================
-
-        conversation_query = text(
-            """
-            INSERT INTO conversations_v2
-            (
-                user_id,
-                user_message,
-                ai_response,
-                intent,
-                sentiment
-            )
-            VALUES
-            (
-                :user_id,
-                :user_message,
-                :ai_response,
-                :intent,
-                :sentiment
-            )
-            """
-        )
+        # User message
 
         db.execute(
-            conversation_query,
+            text(
+                """
+                INSERT INTO conversations_v2
+                (
+                    user_id,
+                    session_id,
+                    role,
+                    message,
+                    intent,
+                    emotion
+                )
+                VALUES
+                (
+                    :user_id,
+                    :session_id,
+                    'user',
+                    :message,
+                    :intent,
+                    :emotion
+                )
+                """
+            ),
             {
-                "user_id": (
-                    request.user_id
-                ),
+                "user_id": request.user_id,
+                "session_id": session_id,
+                "message": request.message,
+                "intent": result["intent"],
+                "emotion": result["emotion"]
+            }
+        )
 
-                "user_message": (
-                    request.message
-                ),
+        # Assistant response
 
-                "ai_response": response,
-
-                "intent": intent,
-
-                "sentiment": sentiment
+        db.execute(
+            text(
+                """
+                INSERT INTO conversations_v2
+                (
+                    user_id,
+                    session_id,
+                    role,
+                    message,
+                    intent,
+                    emotion
+                )
+                VALUES
+                (
+                    :user_id,
+                    :session_id,
+                    'assistant',
+                    :message,
+                    :intent,
+                    :emotion
+                )
+                """
+            ),
+            {
+                "user_id": request.user_id,
+                "session_id": session_id,
+                "message": result["response"],
+                "intent": result["intent"],
+                "emotion": result["emotion"]
             }
         )
 
@@ -160,12 +108,12 @@ def process_chat(
 
         return {
             "status": "success",
-            "intent": intent,
-            "sentiment": sentiment,
-            "response": response
+            **result
         }
 
     except Exception as e:
+
+        db.rollback()
 
         return {
             "status": "failed",

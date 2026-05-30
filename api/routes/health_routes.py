@@ -6,10 +6,6 @@ from utils.database import (
     SessionLocal
 )
 
-from services.inference.model_manager import (
-    ModelManager
-)
-
 
 router = APIRouter()
 

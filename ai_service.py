@@ -40,10 +40,11 @@ class GuruAIService:
         )
 
         # 😊 SENTIMENT
-        sentiment = (
-            SentimentService
-            .detect_sentiment(text)
-        )
+        emotion = (
+        SentimentService
+        .detect_sentiment(text)
+    )
+        
 
         # 🧠 MEMORY
         memories = (

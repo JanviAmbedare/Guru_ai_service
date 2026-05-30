@@ -22,19 +22,6 @@ from utils.file_utils import (
     FileUtils
 )
 
-from services.inference.vector_service import (
-    VectorService
-)
-
-from services.inference.recognition_service import (
-    RecognitionService
-)
-
-from services.inference.voice_embedding_service import (
-    VoiceEmbeddingService
-)
-
-
 router = APIRouter()
 
 
@@ -43,12 +30,12 @@ router = APIRouter()
 # =====================================
 
 @router.post("/voice/register")
-
 async def register_voice(
 
     user_id: int = Form(...),
 
     file: UploadFile = File(...)
+
 ):
 
     db = SessionLocal()
@@ -56,6 +43,10 @@ async def register_voice(
     temp_path = None
 
     try:
+
+        # ==========================
+        # SAVE TEMP FILE
+        # ==========================
 
         suffix = os.path.splitext(
             file.filename
@@ -70,11 +61,19 @@ async def register_voice(
 
         contents = await file.read()
 
-        temp_file.write(contents)
+        temp_file.write(
+            contents
+        )
 
         temp_file.close()
 
-        temp_path = temp_file.name
+        temp_path = (
+            temp_file.name
+        )
+
+        # ==========================
+        # CLOUDINARY UPLOAD
+        # ==========================
 
         upload_result = (
             CloudinaryService
@@ -83,6 +82,10 @@ async def register_voice(
                 "guru/voices"
             )
         )
+
+        # ==========================
+        # SAVE MEDIA RECORD
+        # ==========================
 
         media_query = text(
             """
@@ -107,7 +110,7 @@ async def register_voice(
                 'voices',
                 'registration',
                 :file_name,
-                :local_path,
+                NULL,
                 :cloudinary_url,
                 :public_id,
                 :file_size,
@@ -124,7 +127,6 @@ async def register_voice(
             {
                 "user_id": user_id,
                 "file_name": file.filename,
-                "local_path": temp_path,
                 "cloudinary_url": (
                     upload_result["url"]
                 ),
@@ -141,6 +143,10 @@ async def register_voice(
         media_file_id = (
             result.lastrowid
         )
+
+        # ==========================
+        # TRAINING QUEUE
+        # ==========================
 
         queue_query = text(
             """
@@ -176,15 +182,19 @@ async def register_voice(
         return {
             "status": "success",
             "message": (
-                "Voice uploaded "
-                "and queued"
+                "Voice uploaded and queued"
             ),
             "media_file_id": (
                 media_file_id
+            ),
+            "cloudinary_url": (
+                upload_result["url"]
             )
         }
 
     except Exception as e:
+
+        db.rollback()
 
         return {
             "status": "failed",
@@ -200,97 +210,3 @@ async def register_voice(
             FileUtils.delete_file(
                 temp_path
             )
-
-
-# # =====================================
-# # VOICE RECOGNITION
-# # =====================================
-
-# @router.post("/voice/recognize")
-
-# async def recognize_voice(
-
-#     user_id: int = Form(...),
-
-#     file: UploadFile = File(...)
-# ):
-
-#     temp_path = None
-
-#     try:
-
-#         suffix = os.path.splitext(
-#             file.filename
-#         )[1]
-
-#         temp_file = (
-#             tempfile.NamedTemporaryFile(
-#                 delete=False,
-#                 suffix=suffix
-#             )
-#         )
-
-#         contents = await file.read()
-
-#         temp_file.write(contents)
-
-#         temp_file.close()
-
-#         temp_path = temp_file.name
-
-#         new_embedding = (
-#             VoiceEmbeddingService
-#             .generate_embedding(
-#                 user_id,
-#                 temp_path
-#             )
-#         )
-
-#         stored_embedding = (
-#             VectorService
-#             .load_voice_embedding(
-#                 user_id
-#             )
-#         )
-
-#         if stored_embedding is None:
-
-#             return {
-#                 "status": "failed",
-#                 "message": (
-#                     "No registered voice"
-#                 )
-#             }
-
-#         result = (
-#             RecognitionService
-#             .is_voice_match(
-#                 stored_embedding,
-#                 new_embedding
-#             )
-#         )
-
-#         return {
-#             "status": "success",
-#             "matched": (
-#                 result["matched"]
-#             ),
-#             "similarity": (
-#                 result["similarity"]
-#             )
-#         }
-
-#     except Exception as e:
-
-#         return {
-#             "status": "failed",
-#             "error": str(e)
-#         }
-
-#     finally:
-
-#         if temp_path:
-
-#             FileUtils.delete_file(
-#                 temp_path
-#             )
