@@ -1,17 +1,28 @@
-from services.intent_service import (
+from services.chat.intent_service import (
     IntentService
 )
 
-from services.sentiment_service import (
+from services.chat.sentiment_service import (
     SentimentService
 )
 
-from services.memory_service import (
+from services.chat.memory_service import (
     MemoryService
 )
 
-from services.response_service import (
+from services.chat.response_service import (
     ResponseService
+)
+from services.inference.recognition_service import (
+    RecognitionService
+)
+
+from services.inference.face_embedding_service import (
+    FaceEmbeddingService
+)
+
+from services.inference.voice_embedding_service import (
+    VoiceEmbeddingService
 )
 
 class GuruAIService:
