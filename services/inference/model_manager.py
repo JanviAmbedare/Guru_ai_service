@@ -1,13 +1,22 @@
-import os
+from pathlib import Path
 import onnxruntime as ort
+
 
 class ModelManager:
 
-
     _face_model = None
 
+    BASE_DIR = (
+        Path(__file__)
+        .resolve()
+        .parents[2]
+    )
+
     FACE_MODEL_PATH = (
-        "models/exported/mobilefacenet.onnx"
+        BASE_DIR /
+        "models" /
+        "exported" /
+        "w600k_mbf.onnx"
     )
 
     @classmethod
@@ -15,18 +24,9 @@ class ModelManager:
 
         if cls._face_model is None:
 
-            if not os.path.exists(
-                cls.FACE_MODEL_PATH
-            ):
-
-                raise FileNotFoundError(
-                    f"Face model not found: "
-                    f"{cls.FACE_MODEL_PATH}"
-                )
-
             cls._face_model = (
                 ort.InferenceSession(
-                    cls.FACE_MODEL_PATH,
+                    str(cls.FACE_MODEL_PATH),
                     providers=[
                         "CPUExecutionProvider"
                     ]
@@ -34,16 +34,7 @@ class ModelManager:
             )
 
             print(
-                "✅ Face model loaded"
-            )
+        "✅ MobileFaceNet ArcFace loaded"
+        )
 
         return cls._face_model
-
-    @classmethod
-    def clear_cache(cls):
-
-        cls._face_model = None
-
-        print(
-            "🗑️ Model cache cleared"
-        )

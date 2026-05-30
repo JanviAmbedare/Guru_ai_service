@@ -97,24 +97,6 @@ async def startup_event():
     )
 
     # =====================
-    # LOAD MODELS
-    # =====================
-
-    try:
-
-        ModelManager.get_face_model()
-
-        print(
-            "✅ Face model loaded"
-        )
-
-    except Exception as e:
-
-        print(
-            f"❌ Face model error: {e}"
-        )
-
-    # =====================
     # START QUEUE WORKER
     # =====================
 

@@ -8,44 +8,37 @@ class PreprocessingService:
     FACE_SIZE = (112, 112)
 
     @staticmethod
-    def preprocess_face(image_path):
+    def preprocess_face(
+        face
+    ):
 
-        image = cv2.imread(image_path)
-
-        if image is None:
-
-            raise Exception(
-                f"Unable to load image: "
-                f"{image_path}"
-            )
-
-        image = cv2.resize(
-            image,
-            PreprocessingService.FACE_SIZE
+        face = cv2.resize(
+            face,
+            (112, 112)
         )
 
-        image = cv2.cvtColor(
-            image,
+        face = cv2.cvtColor(
+            face,
             cv2.COLOR_BGR2RGB
         )
 
-        image = image.astype(
+        face = face.astype(
             np.float32
         )
 
-        image = image / 255.0
+        face = (face - 127.5) / 127.5
 
-        image = np.transpose(
-            image,
+        face = np.transpose(
+            face,
             (2, 0, 1)
         )
 
-        image = np.expand_dims(
-            image,
+        face = np.expand_dims(
+            face,
             axis=0
         )
 
-        return image
+        return face
 
     @staticmethod
     def preprocess_voice(audio_path):

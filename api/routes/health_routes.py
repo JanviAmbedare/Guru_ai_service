@@ -65,36 +65,10 @@ def system_status():
 
         db_status = "connected"
 
-        # ==========================
-        # MODEL CHECK
-        # ==========================
-
-        face_model = (
-            ModelManager
-            .get_face_model()
-        )
-
-        voice_model = (
-            ModelManager
-            .get_voice_model()
-        )
-
         return {
             "status": "success",
 
             "database": db_status,
-
-            "face_model": (
-                "loaded"
-                if face_model
-                else "not_loaded"
-            ),
-
-            "voice_model": (
-                "loaded"
-                if voice_model
-                else "not_loaded"
-            ),
 
             "api": "running"
         }

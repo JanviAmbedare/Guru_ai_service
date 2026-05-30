@@ -48,7 +48,7 @@ MODEL_PATH = (
     BASE_DIR /
     "models" /
     "exported" /
-    "mobilefacenet.onnx"
+    "w600k_mbf.onnx"
 )
 
 EMBEDDING_DIR = (
@@ -96,7 +96,7 @@ def preprocess_face(face):
 
     face = cv2.resize(
         face,
-        (160, 160)
+        (112,112)
     )
 
     face = cv2.cvtColor(
@@ -104,10 +104,7 @@ def preprocess_face(face):
         cv2.COLOR_BGR2RGB
     )
 
-    face = (
-        face.astype(np.float32)
-        / 255.0
-    )
+    face = (face - 127.5) / 127.5
 
     face = np.transpose(
         face,
