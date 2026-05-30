@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import asyncio
 import threading
+import uvicorn
 from api.routes.health_routes import (
     router as health_router
 )
@@ -101,7 +102,7 @@ async def startup_event():
 
     try:
 
-        ModelManager.load_face_model()
+        ModelManager.get_face_model()
 
         print(
             "✅ Face model loaded"
@@ -111,20 +112,6 @@ async def startup_event():
 
         print(
             f"❌ Face model error: {e}"
-        )
-
-    try:
-
-        ModelManager.load_voice_model()
-
-        print(
-            "✅ Voice model loaded"
-        )
-
-    except Exception as e:
-
-        print(
-            f"❌ Voice model error: {e}"
         )
 
     # =====================
@@ -161,3 +148,13 @@ def root():
         ),
         "version": "1.0.0"
     }
+
+if __name__ == "__main__":
+
+
+    uvicorn.run(
+        "main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=True
+    )

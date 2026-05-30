@@ -52,7 +52,8 @@ class PreprocessingService:
 
         audio, sample_rate = librosa.load(
             audio_path,
-            sr=16000
+            sr=16000,
+            mono=True
         )
 
         if len(audio) == 0:
@@ -61,24 +62,13 @@ class PreprocessingService:
                 "Empty audio file"
             )
 
-        mfcc = librosa.feature.mfcc(
-            y=audio,
-            sr=sample_rate,
-            n_mfcc=40
-        )
-
-        mfcc = np.mean(
-            mfcc.T,
-            axis=0
-        )
-
-        mfcc = np.expand_dims(
-            mfcc,
-            axis=0
-        )
-
-        mfcc = mfcc.astype(
+        audio = audio.astype(
             np.float32
         )
 
-        return mfcc
+        audio = np.expand_dims(
+            audio,
+            axis=0
+        )
+
+        return audio

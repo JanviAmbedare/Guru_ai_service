@@ -1,18 +1,13 @@
 import os
 import onnxruntime as ort
 
-
 class ModelManager:
 
+
     _face_model = None
-    _voice_model = None
 
     FACE_MODEL_PATH = (
         "models/exported/mobilefacenet.onnx"
-    )
-
-    VOICE_MODEL_PATH = (
-        "models/exported/ecapa_tdnn.onnx"
     )
 
     @classmethod
@@ -45,30 +40,10 @@ class ModelManager:
         return cls._face_model
 
     @classmethod
-    def get_voice_model(cls):
+    def clear_cache(cls):
 
-        if cls._voice_model is None:
+        cls._face_model = None
 
-            if not os.path.exists(
-                cls.VOICE_MODEL_PATH
-            ):
-
-                raise FileNotFoundError(
-                    f"Voice model not found: "
-                    f"{cls.VOICE_MODEL_PATH}"
-                )
-
-            cls._voice_model = (
-                ort.InferenceSession(
-                    cls.VOICE_MODEL_PATH,
-                    providers=[
-                        "CPUExecutionProvider"
-                    ]
-                )
-            )
-
-            print(
-                "✅ Voice model loaded"
-            )
-
-        return cls._voice_model
+        print(
+            "🗑️ Model cache cleared"
+        )

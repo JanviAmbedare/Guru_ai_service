@@ -30,7 +30,9 @@ from sqlalchemy import text
 from utils.database import (
     SessionLocal
 )
-
+from utils.file_utils import (
+    FileUtils
+)
 # =====================================
 # LOAD ENV
 # =====================================
@@ -342,13 +344,9 @@ def process_faces():
 
         finally:
 
-            if (
-                temp_path
-                and
-                os.path.exists(temp_path)
-            ):
-
-                os.remove(temp_path)
+            FileUtils.delete_file(
+                    temp_path
+                )
 
     # =================================
     # SAVE FINAL USER EMBEDDINGS

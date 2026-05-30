@@ -1,4 +1,7 @@
 from sqlalchemy import text
+from utils.database import (
+    SessionLocal
+)
 import numpy as np
 from services.inference.face_embedding_service import (
     FaceEmbeddingService
@@ -14,6 +17,10 @@ from services.inference.vector_service import (
 from services.inference.quality_service import (
     QualityService
 )
+from utils.cloudinary_service import (
+    CloudinaryService
+)
+
 class TrainingService:
 
     @staticmethod
@@ -37,6 +44,7 @@ class TrainingService:
                 WHERE user_id=:user_id
                 AND media_category=:category
                 AND is_active=1
+                AND is_used_for_training=0
                 ORDER BY created_at ASC
                 """
             )
@@ -66,7 +74,11 @@ class TrainingService:
                     row._mapping
                 )
 
-                media_path = media["local_path"]
+                media_path = (
+                    CloudinaryService.download_file(
+                        media["cloudinary_url"]
+                    )
+                )
 
                 if job_type == "face":
 
@@ -88,7 +100,6 @@ class TrainingService:
 
                     embedding = (
                         VoiceEmbeddingService.generate_embedding(
-                            user_id,
                             media_path
                         )
                     )

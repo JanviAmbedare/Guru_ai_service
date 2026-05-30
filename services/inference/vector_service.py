@@ -3,19 +3,32 @@ import numpy as np
 
 from sqlalchemy import text
 
+from utils.cloudinary_service import CloudinaryService
 from utils.database import (
     SessionLocal
 )
+from pathlib import Path
 
+BASE_DIR = (
+    Path(__file__)
+    .resolve()
+    .parents[1]
+)
 
 class VectorService:
 
     FACE_DIR = (
-        "storage/embeddings/faces"
+        BASE_DIR /
+        "storage" /
+        "embeddings" /
+        "faces"
     )
 
     VOICE_DIR = (
-        "storage/embeddings/voices"
+        BASE_DIR /
+        "storage" /
+        "embeddings" /
+        "voices"
     )
 
     @staticmethod
@@ -52,6 +65,19 @@ class VectorService:
 
         np.save(path, embedding)
 
+        upload_result = (
+            CloudinaryService
+            .upload_embedding(
+                str(path),
+                "faces",
+                user_id
+            )
+        )
+
+        embedding_url = (
+            upload_result["url"]
+        )
+
         db = SessionLocal()
 
         try:
@@ -79,6 +105,7 @@ class VectorService:
                         label,
                         file_path,
                         embedding_path,
+                        embedding_url,
                         sample_number,
                         is_trained,
                         model_version,
@@ -91,6 +118,7 @@ class VectorService:
                         :label,
                         :file_path,
                         :embedding_path,
+                        :embedding_url,
                         :sample_number,
                         1,
                         'mobilefacenet_v1',
@@ -101,10 +129,11 @@ class VectorService:
                 {
                     "user_id": user_id,
                     "label": f"user_{user_id}",
-                    "file_path":
-                        f"guru-storage/faces/raw/{user_id}",
+                    "file_path": "cloudinary",
                     "embedding_path": path,
-                    "sample_number": sample_count
+                    "embedding_url": embedding_url,
+                    "sample_number": sample_count,
+                    "average_quality": average_quality
                 }
             )
 
@@ -151,6 +180,19 @@ class VectorService:
 
         np.save(path, embedding)
 
+        upload_result = (
+            CloudinaryService
+            .upload_embedding(
+                str(path),
+                "voices",
+                user_id
+            )
+        )
+
+        embedding_url = (
+            upload_result["url"]
+        )
+
         db = SessionLocal()
 
         try:
@@ -178,6 +220,7 @@ class VectorService:
                         label,
                         file_path,
                         embedding_path,
+                        embedding_url,
                         sample_number,
                         is_trained,
                         model_version,
@@ -190,6 +233,7 @@ class VectorService:
                         :label,
                         :file_path,
                         :embedding_path,
+                        :embedding_url,
                         :sample_number,
                         1,
                         'ecapa_tdnn_v1',
@@ -200,9 +244,9 @@ class VectorService:
                 {
                     "user_id": user_id,
                     "label": f"user_{user_id}",
-                    "file_path":
-                        f"guru-storage/voices/raw/{user_id}",
+                    "file_path": "cloudinary",
                     "embedding_path": path,
+                    "embedding_url": embedding_url,
                     "sample_number": sample_count,
                     "average_quality": average_quality
                 }

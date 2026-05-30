@@ -1,67 +1,88 @@
 import numpy as np
+import torch
 
-from services.inference.model_manager import (
-    ModelManager
+from speechbrain.inference.speaker import (
+EncoderClassifier
 )
 
 from services.inference.preprocessing_service import (
-    PreprocessingService
+PreprocessingService
 )
-
-from services.inference.vector_service import (
-    VectorService
-)
-
 
 class VoiceEmbeddingService:
 
-    @staticmethod
-    def generate_embedding(
-    user_id,
-    audio_path,
-    media_file_id=None
-    ):
+    _model = None
 
-        try:
+    @classmethod
+    def get_model(cls):
 
-            model = (
-                ModelManager
-                .get_voice_model()
+        if cls._model is None:
+
+            print(
+                "🚀 Loading ECAPA-TDNN..."
             )
 
-            audio = (
-                PreprocessingService
-                .preprocess_voice(
-                    audio_path
+            cls._model = (
+                EncoderClassifier
+                .from_hparams(
+                    source=
+                    "speechbrain/spkrec-ecapa-voxceleb",
+                    savedir=
+                    "models/pretrained/ecapa_tdnn"
                 )
             )
 
-            input_name = (
-                model.get_inputs()[0].name
+            print(
+                "✅ ECAPA-TDNN loaded"
             )
 
-            embedding = model.run(
-                None,
-                {
-                    input_name: audio
-                }
-            )[0]
+        return cls._model
 
+    @classmethod
+    def generate_embedding(
+        cls,
+        audio_path
+    ):
 
-            embedding = embedding.flatten()
+        model = cls.get_model()
 
-            norm = np.linalg.norm(
-                embedding
+        audio = (
+            PreprocessingService
+            .preprocess_voice(
+                audio_path
             )
+        )
+
+        wav_tensor = (
+            torch.tensor(
+                audio,
+                dtype=torch.float32
+            )
+        )
+
+        embedding = (
+            model
+            .encode_batch(
+                wav_tensor
+            )
+            .detach()
+            .cpu()
+            .numpy()
+        )
+
+        embedding = (
+            embedding
+            .flatten()
+        )
+
+        norm = np.linalg.norm(
+            embedding
+        )
+
+        if norm > 0:
 
             embedding = (
                 embedding / norm
             )
 
-            return embedding
-
-        except Exception as e:
-
-            raise Exception(
-                f"Voice embedding failed: {e}"
-            )
+        return embedding
