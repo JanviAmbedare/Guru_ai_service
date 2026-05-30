@@ -7,7 +7,7 @@ storage/embeddings/
 storage/cache/
 
 *.npy
-*.onnx
+
 
 .idea/
 .vscode/
