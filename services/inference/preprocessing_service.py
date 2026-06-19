@@ -65,3 +65,19 @@ class PreprocessingService:
         )
 
         return audio
+    
+    @staticmethod
+    def extract_face(image_path):
+
+        image = cv2.imread(
+            image_path
+        )
+
+        if image is None:
+
+            raise Exception(
+                f"Cannot load image: "
+                f"{image_path}"
+            )
+
+        return image

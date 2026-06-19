@@ -1,6 +1,6 @@
 from sqlalchemy import text
 from utils.database import (
-    SessionLocal
+    get_db
 )
 import numpy as np
 from services.inference.face_embedding_service import (
@@ -28,7 +28,10 @@ class TrainingService:
         db,
         job
     ):
-
+        print("=" * 50)
+        print("PROCESS_JOB CALLED")
+        print(job)
+        print("=" * 50)
         try:
 
             job_id = job["id"]
@@ -74,11 +77,22 @@ class TrainingService:
                     row._mapping
                 )
 
-                media_path = (
-                    CloudinaryService.download_file(
-                        media["cloudinary_url"]
+                if job_type == "voice":
+
+                    media_path = (
+                        CloudinaryService.download_file(
+                            media["cloudinary_url"],
+                            as_wav=True
+                        )
                     )
-                )
+
+                else:
+
+                    media_path = (
+                        CloudinaryService.download_file(
+                            media["cloudinary_url"]
+                        )
+                    )
 
                 if job_type == "face":
 
@@ -98,11 +112,22 @@ class TrainingService:
 
                 else:
 
-                    embedding = (
-                        VoiceEmbeddingService.generate_embedding(
-                            media_path
+                    try:
+
+                        embedding = (
+                            VoiceEmbeddingService
+                            .generate_embedding(
+                                media_path
+                            )
                         )
-                    )
+
+                    except Exception as e:
+
+                        print(
+                            f"Skipping bad audio: {e}"
+                        )
+
+                        continue
                     quality_scores.append(
 
                         QualityService
@@ -228,7 +253,15 @@ class TrainingService:
 
             db.commit()
 
-            print(
-                f"❌ Training failed: "
-                f"{e}"
-            )
+            import traceback
+
+            print("=" * 50)
+            print("VOICE TRAINING ERROR")
+            print("=" * 50)
+
+            print(type(e))
+            print(str(e))
+
+            traceback.print_exc()
+
+            raise

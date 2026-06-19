@@ -28,6 +28,9 @@ from services.inference.model_manager import (
 from api.routes.training_routes import (
     router as training_router
 )
+from api.routes.model_routes import (
+    router as model_router
+)
 
 app = FastAPI(
     title="GURU AI",
@@ -45,7 +48,14 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+
+        "https://guru-ai-powered-assistive-companion-q2v0.onrender.com",
+
+        "https://guru-ai-powered-assistive-companion-kpna.onrender.com"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -86,6 +96,11 @@ app.include_router(
     tags=["Training"]
 )
 
+app.include_router(
+    model_router,
+    prefix="/api",
+    tags=["Models"]
+)
 # ==============================
 # STARTUP EVENTS
 # ==============================

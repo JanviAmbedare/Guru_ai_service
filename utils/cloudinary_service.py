@@ -28,7 +28,20 @@ cloudinary.config(
 class CloudinaryService:
 
     @staticmethod
-    def download_file(url):
+    def download_file(
+        url,
+        as_wav=False
+    ):
+
+        if (
+            as_wav
+            and ".webm" in url
+        ):
+
+            url = url.replace(
+                "/upload/",
+                "/upload/f_wav/"
+            )
 
         response = requests.get(
             url,

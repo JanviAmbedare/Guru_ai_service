@@ -1,78 +1,72 @@
 import numpy as np
 import torch
 
-from speechbrain.inference.speaker import (
-EncoderClassifier
-)
+import librosa
 
-from services.inference.preprocessing_service import (
-PreprocessingService
-)
+
 
 class VoiceEmbeddingService:
 
     _model = None
 
-    @classmethod
-    def get_model(cls):
-
-        if cls._model is None:
-
-            print(
-                "🚀 Loading ECAPA-TDNN..."
-            )
-
-            cls._model = (
-                EncoderClassifier
-                .from_hparams(
-                    source=
-                    "speechbrain/spkrec-ecapa-voxceleb",
-                    savedir=
-                    "models/pretrained/ecapa_tdnn"
-                )
-            )
-
-            print(
-                "✅ ECAPA-TDNN loaded"
-            )
-
-        return cls._model
-
-    @classmethod
-    def generate_embedding(
-        cls,
-        audio_path
-    ):
-
-        model = cls.get_model()
-
-        audio = (
-            PreprocessingService
-            .preprocess_voice(
-                audio_path
-            )
+    @staticmethod
+    def generate_embedding(audio_path):
+        print(
+        f"WAV file: "
+        f"{audio_path}"
+    )
+        audio, sr = librosa.load(
+            audio_path,
+            sr=16000,
+            mono=True
         )
 
-        wav_tensor = (
-            torch.tensor(
-                audio,
-                dtype=torch.float32
-            )
+        mfcc = librosa.feature.mfcc(
+            y=audio,
+            sr=sr,
+            n_mfcc=40
         )
 
-        embedding = (
-            model
-            .encode_batch(
-                wav_tensor
-            )
-            .detach()
-            .cpu()
-            .numpy()
+        mfcc_mean = np.mean(
+            mfcc,
+            axis=1
         )
 
-        embedding = (
-            embedding
-            .flatten()
+        mfcc_std = np.std(
+            mfcc,
+            axis=1
+        )
+
+        delta = librosa.feature.delta(
+            mfcc
+        )
+
+        delta2 = librosa.feature.delta(
+            mfcc,
+            order=2
+        )
+
+        delta_mean = np.mean(
+            delta,
+            axis=1
+        )
+
+        delta2_mean = np.mean(
+            delta2,
+            axis=1
+        )
+
+        embedding = np.concatenate(
+            [
+                mfcc_mean,
+                mfcc_std,
+                delta_mean,
+                delta2_mean
+            ]
+        )
+
+        embedding = embedding.astype(
+            np.float32
         )
 
         norm = np.linalg.norm(
@@ -80,9 +74,9 @@ class VoiceEmbeddingService:
         )
 
         if norm > 0:
-
-            embedding = (
-                embedding / norm
+            embedding = embedding / norm
+        print(
+                f"Voice embedding shape: "
+                f"{embedding.shape}"
             )
-
         return embedding

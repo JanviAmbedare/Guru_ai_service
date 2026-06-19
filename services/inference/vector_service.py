@@ -8,6 +8,11 @@ from utils.database import (
     SessionLocal
 )
 from pathlib import Path
+from services.inference.model_registry_service import (
+    ModelRegistryService
+)
+from services.inference.version_service import (
+    VersionService)
 
 BASE_DIR = (
     Path(__file__)
@@ -30,7 +35,7 @@ class VectorService:
         "embeddings" /
         "voices"
     )
-
+    print("VECTOR SERVICE VERSION 19-JUNE")
     @staticmethod
     def initialize_storage():
 
@@ -94,7 +99,7 @@ class VectorService:
                     "user_id": user_id
                 }
             )
-
+            print("FACE INSERT START")
             db.execute(
                 text(
                     """
@@ -136,9 +141,27 @@ class VectorService:
                     "average_quality": average_quality
                 }
             )
-
+            print("FACE INSERT SUCCESS")
+            ModelRegistryService.register_model(
+                user_id=user_id,
+                model_name=f"user_{user_id}_face",
+                model_type="face",
+                version = VersionService.next_version(
+                        user_id,
+                        "face"
+                    ),
+                storage_path=embedding_url
+            )
             db.commit()
 
+        except Exception as e:
+
+            print(
+                f"VECTOR SERVICE ERROR: {e}"
+            )
+
+            raise
+        
         finally:
 
             db.close()
@@ -210,6 +233,8 @@ class VectorService:
                 }
             )
 
+            print("VOICE INSERT START")
+
             db.execute(
                 text(
                     """
@@ -236,7 +261,7 @@ class VectorService:
                         :embedding_url,
                         :sample_number,
                         1,
-                        'ecapa_tdnn_v1',
+                        'mfcc_delta_v1',
                         :average_quality
                     )
                     """
@@ -251,9 +276,26 @@ class VectorService:
                     "average_quality": average_quality
                 }
             )
-
+            print("VOICE INSERT SUCCESS")
+            ModelRegistryService.register_model(
+                    model_name=f"user_{user_id}_voice",
+                    user_id=user_id,
+                    model_type="voice",
+                    version = VersionService.next_version(
+                            user_id,
+                            "voice"
+                        ),
+                    storage_path=embedding_url
+            )
             db.commit()
 
+        except Exception as e:
+
+            print(
+                f"VECTOR SERVICE ERROR: {e}"
+            )
+
+            raise
         finally:
 
             db.close()

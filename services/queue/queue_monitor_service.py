@@ -41,7 +41,7 @@ class QueueMonitorService:
                 result = db.execute(
                     query
                 ).fetchone()
-
+                print(f"Worker result: {result}")
                 if result:
 
                     job = dict(

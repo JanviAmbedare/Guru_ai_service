@@ -40,7 +40,7 @@ hf-xet==1.5.0
 httpcore==1.0.9
 httpx==0.28.1
 huggingface_hub==1.17.0
-HyperPyYAML==1.2.3
+
 idna==3.16
 ImageIO==2.37.3
 insightface==1.0.1
@@ -115,13 +115,13 @@ ruamel.yaml.clib==0.2.15
 scikit-image==0.26.0
 scikit-learn==1.8.0
 scipy==1.17.1
-sentencepiece==0.2.1
+resemblyzer==0.1.4
 shellingham==1.5.4
 six==1.17.0
 soundfile==0.13.1
 soupsieve==2.8.4
 soxr==1.1.0
-speechbrain==1.1.0
+
 SQLAlchemy==2.0.50
 stack-data==0.6.3
 starlette==1.1.0
