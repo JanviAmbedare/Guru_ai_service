@@ -2,13 +2,18 @@ import os
 import re
 import joblib
 import pandas as pd
-
+from sqlalchemy import text
 from sklearn.pipeline import Pipeline
-
+from utils.cloudinary_service import (
+    CloudinaryService
+)
+from utils.model_storage_service import (
+    ModelStorageService
+)
 from sklearn.feature_extraction.text import (
     TfidfVectorizer
 )
-
+from utils.database import SessionLocal
 from sklearn.linear_model import (
     LogisticRegression
 )
@@ -237,10 +242,61 @@ def train_model():
         MODEL_OUTPUT_PATH
     )
 
-    print(
-        f"✅ Model saved: "
-        f"{MODEL_OUTPUT_PATH}"
+    model_url = (
+    ModelStorageService
+    .upload_intent_model(
+        MODEL_OUTPUT_PATH
+        )
     )
+
+    print(
+        f"Model URL: {model_url}"
+    )
+    
+    #=========================
+    #Upload to cloudinary
+    #=========================
+    
+    db = SessionLocal()
+
+    db.execute(
+        text(
+        """
+            INSERT INTO global_model_registry
+            (
+                model_name,
+                model_type,
+                version,
+                storage_path
+            )
+            VALUES
+            (
+                :model_name,
+                :model_type,
+                :version,
+                :storage_path
+            )
+            """
+        ),
+        {
+            "model_name":
+                "intent_pipeline",
+
+            "model_type":
+                "intent",
+
+            "version":
+                "v1",
+
+            "storage_path":
+                model_url
+        }
+    )
+    print(
+    "✅ Global model registry updated")
+    
+    db.commit()
+    db.close()
 
 
 # =====================================

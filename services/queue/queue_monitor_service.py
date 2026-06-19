@@ -32,7 +32,12 @@ class QueueMonitorService:
                     """
                     SELECT *
                     FROM model_training_queue
-                    WHERE status='pending'
+                    WHERE status IN
+                    (
+                        'pending',
+                        'uploading',
+                        'queued'
+                    )
                     ORDER BY created_at ASC
                     LIMIT 1
                     """

@@ -101,6 +101,13 @@ app.include_router(
     prefix="/api",
     tags=["Models"]
 )
+from api.routes.global_model_routes import (
+    router as global_model_router
+)
+
+app.include_router(
+    global_model_router
+)
 # ==============================
 # STARTUP EVENTS
 # ==============================
