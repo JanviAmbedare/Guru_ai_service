@@ -35,24 +35,3 @@ def latest_models(user_id: int):
 
     finally:
         db.close()
-
-@router.get(
-    "/models/global"
-)
-def get_global_models():
-    db = SessionLocal()
-    
-    try:
-        query = """
-        SELECT *
-        FROM global_model_registry
-        WHERE active = 1
-        ORDER BY created_at DESC
-        """
-
-        return db.execute(
-            query
-        ).fetchall()
-        
-    finally:
-        db.close()

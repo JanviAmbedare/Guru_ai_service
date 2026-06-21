@@ -35,7 +35,7 @@ class VectorService:
         "embeddings" /
         "voices"
     )
-    print("VECTOR SERVICE VERSION 19-JUNE")
+
     @staticmethod
     def initialize_storage():
 
