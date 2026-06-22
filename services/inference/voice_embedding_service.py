@@ -20,7 +20,10 @@ class VoiceEmbeddingService:
             sr=16000,
             mono=True
         )
-
+        print(
+            f"Audio duration: "
+            f"{len(audio)/sr:.2f} sec"
+        )
         mfcc = librosa.feature.mfcc(
             y=audio,
             sr=sr,

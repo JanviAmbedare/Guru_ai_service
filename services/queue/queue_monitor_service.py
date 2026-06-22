@@ -104,7 +104,27 @@ class QueueMonitorService:
     ):
         conn = SessionLocal().connection().connection
         cursor = conn.cursor()
+        cursor.execute(
+            """
+            UPDATE media_files
+            SET is_used_for_training=0
+            WHERE user_id=%s
+            AND media_category='faces'
+            """,
+            (user_id,)
+        )
 
+        cursor.execute(
+            """
+            UPDATE media_files
+            SET is_used_for_training=0
+            WHERE user_id=%s
+            AND media_category='voices'
+            """,
+            (user_id,)
+        )
+
+        conn.commit()
         cursor.execute(
             """
             UPDATE model_training_queue

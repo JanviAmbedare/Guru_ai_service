@@ -1,6 +1,6 @@
 from sqlalchemy import text
 from utils.database import (
-    get_db
+    SessionLocal
 )
 import numpy as np
 from services.inference.face_embedding_service import (
@@ -22,7 +22,7 @@ from utils.cloudinary_service import (
 )
 
 class TrainingService:
-
+    db = SessionLocal()
     @staticmethod
     def process_job(
         db,
@@ -47,7 +47,6 @@ class TrainingService:
                 WHERE user_id=:user_id
                 AND media_category=:category
                 AND is_active=1
-                AND is_used_for_training=0
                 ORDER BY created_at ASC
                 """
             )
@@ -70,13 +69,20 @@ class TrainingService:
                 )
             quality_scores = []
             embeddings = []
+            successful_media_ids = []
 
             for row in media_results:
 
                 media = dict(
                     row._mapping
                 )
-
+                
+                print(
+                    media["id"],
+                    media["file_name"],
+                    media["is_used_for_training"]
+                )
+                
                 if job_type == "voice":
 
                     media_path = (
@@ -96,19 +102,33 @@ class TrainingService:
 
                 if job_type == "face":
 
-                    embedding = (
-                        FaceEmbeddingService.generate_embedding(
-                            user_id,
-                            media_path
-                        )
-                    )
-                    quality_scores.append(
+                    try:
 
-                        QualityService
-                        .calculate_face_quality(
-                            media_path
+                        embedding = (
+                            FaceEmbeddingService.generate_embedding(
+                                user_id,
+                                media_path
+                            )
                         )
-                    )
+
+                        quality_scores.append(
+                            QualityService.calculate_face_quality(
+                                media_path
+                            )
+                        )
+                        successful_media_ids.append(
+                                                                        media["id"]
+                                                                    )
+                        
+
+                    except Exception as e:
+
+                        print(
+                            f"Skipping bad image "
+                            f"{media['file_name']} : {e}"
+                        )
+
+                        continue
 
                 else:
 
@@ -124,10 +144,12 @@ class TrainingService:
                     except Exception as e:
 
                         print(
-                            f"Skipping bad audio: {e}"
+                            f"Skipping audio "
+                            f"{media['file_name']}: {e}"
                         )
 
                         continue
+                    
                     quality_scores.append(
 
                         QualityService
@@ -135,13 +157,25 @@ class TrainingService:
                             media_path
                         )
                     )
-
+                    successful_media_ids.append(
+                                                media["id"]
+                                            )   
+                    
                 embeddings.append(
-                        embedding
-                    )
-            if not embeddings:
+                                embedding
+                            )
+                
+            if len(embeddings) < 3:
+
                 raise Exception(
-                    "No embeddings generated"
+                    f"Too few valid samples: "
+                    f"{len(embeddings)}"
+                )
+                
+            if not quality_scores:
+
+                raise Exception(
+                    "No valid samples processed"
                 )
             average_quality = (
                     sum(quality_scores)
@@ -162,17 +196,12 @@ class TrainingService:
                     "Invalid embedding norm"
                 )
 
-            final_embedding = (
-                final_embedding / norm
-            )
-            for row in media_results:
+            final_embedding = (final_embedding / norm)
+            
+            
+            for media_id in successful_media_ids:
 
-                media = dict(
-                    row._mapping
-                )
-
-                media_id = media["id"]
-
+                
                 update_query = text(
                     """
                     UPDATE media_files
@@ -180,13 +209,15 @@ class TrainingService:
                     WHERE id=:media_id
                     """
                 )
-
+                
                 db.execute(
                     update_query,
                     {
                         "media_id": media_id
                     }
                 )
+                
+                
             db.commit()
 
             if job_type == "face":

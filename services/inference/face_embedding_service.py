@@ -28,6 +28,11 @@ class FaceEmbeddingService:
                 image_path
             )
         )
+        if face is None:
+
+            raise Exception(
+                f"Face not found in {image_path}"
+            )
 
         face = (
             PreprocessingService
