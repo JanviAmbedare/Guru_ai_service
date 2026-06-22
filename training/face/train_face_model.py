@@ -24,7 +24,7 @@ import numpy as np
 import onnxruntime as ort
 
 from dotenv import load_dotenv
-from retinaface import RetinaFace
+
 from sqlalchemy import text
 
 from utils.database import (
@@ -32,6 +32,9 @@ from utils.database import (
 )
 from utils.file_utils import (
     FileUtils
+)
+from services.inference.preprocessing_service import (
+    PreprocessingService
 )
 # =====================================
 # LOAD ENV
@@ -281,30 +284,19 @@ def process_faces():
             # DETECT FACE
             # ======================
 
-            faces = RetinaFace.detect_faces(
-                temp_path
+            face_crop = (
+                PreprocessingService
+                .extract_face(temp_path)
             )
 
-            if not faces:
+            if face_crop is None:
 
                 print(
-                    "❌ No face detected"
+                    "No face detected"
                 )
 
                 continue
 
-            first_face = list(
-                faces.values()
-            )[0]
-
-            x1, y1, x2, y2 = (
-                first_face["facial_area"]
-            )
-
-            face_crop = image[
-                y1:y2,
-                x1:x2
-            ]
 
             # ======================
             # GENERATE EMBEDDING

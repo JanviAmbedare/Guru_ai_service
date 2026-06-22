@@ -24,7 +24,7 @@ onnx==1.21.0
 onnxruntime==1.26.0
 
 insightface==0.7.3
-retina-face==0.0.17
+
 
 torch==2.2.2
 torchaudio==2.2.2

@@ -164,7 +164,10 @@ class TrainingService:
                 embeddings.append(
                                 embedding
                             )
-                
+                print(
+                    f"Valid Faces: "
+                    f"{len(embeddings)}"
+                )
             if len(embeddings) < 3:
 
                 raise Exception(

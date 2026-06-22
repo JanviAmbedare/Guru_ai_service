@@ -33,7 +33,7 @@ class FaceEmbeddingService:
             raise Exception(
                 f"Face not found in {image_path}"
             )
-
+        print(f"face crop shape = {face.shape}")
         face = (
             PreprocessingService
             .preprocess_face(
